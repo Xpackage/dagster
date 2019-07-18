@@ -746,4 +746,3 @@ def test_storage_in_memory_config():
 def test_directly_init_environment_config():
     config = EnvironmentConfig()
     assert isinstance(config.expectations, ExpectationsConfig)
-    assert isinstance(config.execution, ExecutionConfig)

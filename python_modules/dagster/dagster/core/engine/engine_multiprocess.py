@@ -1,8 +1,9 @@
 import os
 from dagster import check
 
+from dagster.core.execution.api import execute_plan
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
-from dagster.core.execution.config import MultiprocessExecutorConfig
+from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
 from dagster.core.execution.plan.plan import ExecutionPlan
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command
@@ -22,8 +23,11 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         check.inst(self.run_config.executor_config, MultiprocessExecutorConfig)
         pipeline = self.run_config.executor_config.handle.build_pipeline_definition()
 
+        run_config = self.run_config.with_tags(pid=str(os.getpid())).with_executor_config(
+            InProcessExecutorConfig(raise_on_error=self.run_config.executor_config.raise_on_error)
+        )
         with scoped_pipeline_context(
-            pipeline, self.environment_dict, self.run_config.with_tags(pid=str(os.getpid()))
+            pipeline, self.environment_dict, run_config
         ) as pipeline_context:
 
             execution_plan = ExecutionPlan.build(
@@ -32,8 +36,11 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
                 pipeline_context.mode_def,
             )
 
-            for step_event in InProcessEngine.execute(
-                pipeline_context, execution_plan, step_keys_to_execute=[self.step_key]
+            for step_event in execute_plan(
+                execution_plan,
+                self.environment_dict,
+                run_config,
+                step_keys_to_execute=[self.step_key],
             ):
                 yield step_event
 

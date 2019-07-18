@@ -113,7 +113,7 @@ def _execute_pipeline_iterator(context_or_failure_event):
     pipeline_success = True
 
     try:
-        for event in invoke_executor_on_plan(
+        for event in _invoke_executor_on_plan(
             pipeline_context, execution_plan, pipeline_context.run_config.step_keys_to_execute
         ):
             if event.is_step_failure:
@@ -212,7 +212,7 @@ def execute_pipeline_with_preset(pipeline, preset_name, run_config=None):
     )
 
 
-def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute=None):
+def _invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute=None):
     if step_keys_to_execute:
         for step_key in step_keys_to_execute:
             if not execution_plan.has_step(step_key):
@@ -287,7 +287,9 @@ def execute_plan(execution_plan, environment_dict=None, run_config=None, step_ke
 
         _setup_reexecution(run_config, pipeline_context, execution_plan)
 
-        return list(invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute))
+        return list(
+            _invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute)
+        )
 
 
 def _setup_reexecution(run_config, pipeline_context, execution_plan):
